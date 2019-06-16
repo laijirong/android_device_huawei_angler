@@ -18,7 +18,7 @@ Display | 2056 x 1440 pixels, 5.7 inches
 
 ## Device picture
 
-![Nexus 6P](https://www.baidu.com/link?url=eeTH8u06Ul9zxMVh3uOYv8DuLY70VVBKS1WGn5CnY2d3mj1Lu3fg2ciDR_mvXxHgL-_CUUYK9c2vPheR_A1NqLPki2IibRhVNahIkAbgi4a&wd=&eqid=dd0826400000325b000000035c0c7d67)
+![Nexus 6P](<center><img src="https://images10.newegg.com/ProductImage/75-606-065-03.jpg" height="54%" width="54%;"/></center>)
 
 ## Thanks to
 
