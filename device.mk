@@ -21,17 +21,6 @@
 
 # Enable support for chinook sensorhub
 TARGET_USES_CHINOOK_SENSORHUB := false
-#+
-PRODUCT_SHIPPING_API_LEVEL := 23
-
-#ifeq ($(TARGET_PREBUILT_KERNEL),)
-#  LOCAL_KERNEL := device/huawei/angler-kernel/Image.gz-dtb
-#else
-#  LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
-#endif
-
-#PRODUCT_COPY_FILES := \
-#    $(LOCAL_KERNEL):kernel
 
 PRODUCT_COPY_FILES += \
     device/huawei/angler/init.angler.rc:root/init.angler.rc \
@@ -75,7 +64,7 @@ PRODUCT_COPY_FILES += \
 # Audio
 PRODUCT_COPY_FILES += \
     device/huawei/angler/audio_output_policy.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_output_policy.conf \
-    device/huawei/angler/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
+    device/huawei/angler/audio_effects.conf:system/etc/audio_effects_vendor.conf \
     device/huawei/angler/mixer_paths.xml:system/etc/mixer_paths.xml \
     device/huawei/angler/audio_platform_info_i2s.xml:system/etc/audio_platform_info_i2s.xml \
     device/huawei/angler/sound_trigger_mixer_paths.xml:system/etc/sound_trigger_mixer_paths.xml \
@@ -95,8 +84,8 @@ PRODUCT_COPY_FILES += \
     device/huawei/angler/synaptics_dsx.idc:system/usr/idc/synaptics_dsx.idc
 
 # for launcher layout
-PRODUCT_PACKAGES += \
-    AnglerLayout
+#PRODUCT_PACKAGES += \
+#    AnglerLayout
 
 # Fingerprint Sensor
 PRODUCT_PACKAGES += \
@@ -250,7 +239,11 @@ PRODUCT_PACKAGES += \
     libmmcamera_interface2 \
     libmmjpeg_interface \
     libqomx_core \
-    mm-qcamera-app
+    mm-qcamera-app \
+    Snap
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.camera.cpp.duplication=false
 
 # GPS
 PRODUCT_PACKAGES += \
@@ -295,8 +288,8 @@ PRODUCT_PACKAGES += \
 endif
 
 # for off charging mode
-PRODUCT_PACKAGES += \
-    charger_res_images
+#PRODUCT_PACKAGES += \
+#    charger_res_images
 
 PRODUCT_PACKAGES += \
     android.hardware.wifi@1.0-service \
@@ -315,10 +308,11 @@ PRODUCT_PACKAGES += \
 
 # NFC
 PRODUCT_PACKAGES += \
+    com.android.nfc_extras \
     libnfc-nci \
     NfcNci \
     Tag \
-    nfc_nci.msm8994 \
+    nfc_nci.angler \
     android.hardware.nfc@1.0-impl \
 
 # Keymaster HAL
@@ -355,7 +349,7 @@ PRODUCT_PACKAGES += \
 endif
 
 PRODUCT_COPY_FILES += \
-    device/huawei/angler/nfc/libnfc-nci.conf:system/etc/libnfc-nci.conf \
+    device/huawei/angler/nfc/libnfc-brcm.conf:system/etc/libnfc-brcm.conf \
     device/huawei/angler/nfc/libnfc-nxp.conf:system/etc/libnfc-nxp.conf
 
 DEVICE_PACKAGE_OVERLAYS := \
@@ -379,12 +373,15 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Write Manufacturer & Model information in created media files.
 # IMPORTANT: ONLY SET THIS PROPERTY TO TRUE FOR PUBLIC DEVICES
-ifneq ($(filter aosp_angler% angler%, $(TARGET_PRODUCT)),)
+#ifneq ($(filter aosp_angler% angler%, $(TARGET_PRODUCT)),)
 PRODUCT_PROPERTY_OVERRIDES += \
     media.recorder.show_manufacturer_and_model=true
-else
-$(error "you must decide whether to write manufacturer and model information into created media files for this device. ONLY ENABLE IT FOR PUBLIC DEVICE.")
-endif  #TARGET_PRODUCT
+#else
+#$(error "you must decide whether to write manufacturer and model information into created media files for this device. ONLY ENABLE IT FOR PUBLIC DEVICE.")
+#endif  #TARGET_PRODUCT
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.ril.force_eri_from_xml=true
 
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.hwui.texture_cache_size=72 \
@@ -422,7 +419,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.default_network=10 \
     telephony.lteOnCdmaDevice=1 \
-    persist.radio.mode_pref_nv10=1
+    persist.radio.mode_pref_nv10=1 \
+    ro.telephony.get_imsi_from_sim=true
 
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.radio.apm_sim_not_pwdn=1
@@ -438,6 +436,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
    ro.frp.pst=/dev/block/platform/soc.0/f9824900.sdhci/by-name/frp
 
+# For SPN display
+PRODUCT_COPY_FILES += \
+    device/huawei/angler/spn-conf.xml:system/etc/spn-conf.xml
+
 # Request modem to send PLMN name always irrespective
 # of display condition in EFSPN.
 # RIL uses this property.
@@ -448,6 +450,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # If data_no_toggle is 1 then dormancy indications will come with screen off.
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.radio.data_no_toggle=1
+
+# Allow tethering without provisioning app
+PRODUCT_PROPERTY_OVERRIDES += \
+    net.tethering.noprovisioning=true
 
 # Ril sends only one RIL_UNSOL_CALL_RING, so set call_ring.multiple to false
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -547,20 +553,37 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # setup dalvik vm configs.
 $(call inherit-product, frameworks/native/build/phone-xhdpi-2048-dalvik-heap.mk)
 
+# drmservice prop
+PRODUCT_PROPERTY_OVERRIDES += \
+    drm.service.enabled=true
+
+# facelock properties
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.facelock.black_timeout=700 \
+    ro.facelock.det_timeout=2500 \
+    ro.facelock.rec_timeout=3500 \
+    ro.facelock.est_max_time=600
+
 $(call inherit-product-if-exists, hardware/qcom/msm8994/msm8994.mk)
 $(call inherit-product-if-exists, vendor/qcom/gpu/msm8994/msm8994-gpu-vendor.mk)
 
-# copy wlan firmware
-$(call inherit-product-if-exists, hardware/broadcom/wlan/bcmdhd/firmware/bcm4358/device-bcm.mk)
+# copy wlan configs
+$(call inherit-product-if-exists, hardware/broadcom/wlan/bcmdhd/config/config-bcm.mk)
 
 # GPS configuration
 PRODUCT_COPY_FILES += \
     device/huawei/angler/gps.conf:system/etc/gps.conf:qcom
 
-# setup dm-verity configs.
-PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/platform/soc.0/f9824900.sdhci/by-name/system
-PRODUCT_VENDOR_VERITY_PARTITION := /dev/block/platform/soc.0/f9824900.sdhci/by-name/vendor
-$(call inherit-product, build/target/product/verity.mk)
+# only include verity on user builds for lineage
+ifeq ($(TARGET_BUILD_VARIANT),user)
+  PRODUCT_COPY_FILES += device/huawei/angler/fstab-verity.angler:root/fstab.angler
+
+  # setup dm-verity configs.
+  PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/platform/soc.0/f9824900.sdhci/by-name/system
+  # don't check verity on vendor partition as we don't compile it with the boot and system image
+  # PRODUCT_VENDOR_VERITY_PARTITION := /dev/block/platform/soc.0/f9824900.sdhci/by-name/vendor
+  $(call inherit-product, build/target/product/verity.mk)
+endif
 
 # b/29995499
 $(call add-product-sanitizer-module-config,cameraserver,never)

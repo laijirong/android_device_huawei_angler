@@ -14,11 +14,12 @@
 # limitations under the License.
 #
 
-#BUILD_BROKEN_DUP_RULES := true
-
+# Bootloader
 TARGET_BOARD_PLATFORM := msm8994
 TARGET_BOOTLOADER_BOARD_NAME := angler
 
+
+# Architecture
 TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := arm64-v8a
@@ -26,42 +27,47 @@ TARGET_CPU_ABI2 :=
 TARGET_CPU_VARIANT := cortex-a53
 
 TARGET_2ND_ARCH := arm
-TARGET_2ND_ARCH_VARIANT := armv8-a
+TARGET_2ND_ARCH_VARIANT := armv7-a-neon
 TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
 TARGET_2ND_CPU_VARIANT := cortex-a53.a57
 
-# Inline kernel building
-KERNEL_TOOLCHAIN_PREFIX := aarch64-linux-android-
-TARGET_KERNEL_SOURCE := kernel/huawei/angler
-TARGET_KERNEL_CONFIG := angler_defconfig
-BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
-TARGET_NOT_USE_GZIP_RECOVERY_RAMDISK := true
 
+# Inline kernel building
+BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
+TARGET_KERNEL_SOURCE := kernel/huawei/angler
+TARGET_KERNEL_CONFIG := lineageos_angler_defconfig
+TARGET_KERNEL_ARCH := arm64
+TARGET_KERNEL_HEADER_ARCH := arm64
+TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-android-
+TARGET_COMPILE_WITH_MSM_KERNEL := true
 
 BOARD_KERNEL_BASE        := 0x00000000
 BOARD_KERNEL_PAGESIZE    := 4096
 BOARD_KERNEL_TAGS_OFFSET := 0x01E00000
 BOARD_RAMDISK_OFFSET     := 0x02000000
-
 BOARD_KERNEL_CMDLINE := androidboot.hardware=angler androidboot.console=ttyHSL0 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 boot_cpus=0-3 no_console_suspend
-BOARD_KERNEL_CMDLINE += loop.max_part=7 androidboot.selinux=permissive
-#TARGET_KERNEL_CMDLINE += androidboot.selinux=permissive
-
+BOARD_KERNEL_CMDLINE += loop.max_part=7
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset $(BOARD_RAMDISK_OFFSET) --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
 
+
+# Needed for VoLTE
+AUDIO_FEATURE_ENABLED_MULTI_VOICE_SESSIONS := true
+AUDIO_FEATURE_ENABLED_DSM_FEEDBACK := true
+BOARD_SUPPORTS_SOUND_TRIGGER := true
 BOARD_USES_ALSA_AUDIO := true
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/huawei/angler/bluetooth
-
 BOARD_USES_SECURE_SERVICES := true
-
+BOARD_NEEDS_VENDORIMAGE_SYMLINK := true
 TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 TARGET_BOARD_INFO_FILE := device/huawei/angler/board-info.txt
 TARGET_NO_RPC := true
 
+
+# EGL (maybe is the graphic)
 BOARD_EGL_CFG := device/huawei/angler/egl.cfg
 
 # Shader cache config options
@@ -84,47 +90,59 @@ TARGET_USES_HWC2 := true
 VSYNC_EVENT_PHASE_OFFSET_NS := 2000000
 SF_VSYNC_EVENT_PHASE_OFFSET_NS := 6000000
 NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
-
 HAVE_ADRENO_SOURCE:= false
-
 OVERRIDE_RS_DRIVER:= libRSDriver_adreno.so
+
+
+# Charger
 BOARD_CHARGER_DISABLE_INIT_BLANK := true
 # Enable auto suspend in poweroff charging to save power
 BOARD_CHARGER_ENABLE_SUSPEND := true
 
+
+# Enable dex-preoptimization to speed up first boot sequence
+ifeq ($(HOST_OS),linux)
+  ifneq ($(TARGET_BUILD_VARIANT),eng)
+    ifeq ($(WITH_DEXPREOPT),)
+      WITH_DEXPREOPT_BOOT_IMG_AND_SYSTEM_SERVER_ONLY := false
+      WITH_DEXPREOPT := true
+    endif
+  endif
+endif
+
+
+# Partition info
 TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
 BOARD_BOOTIMAGE_PARTITION_SIZE := 33554432
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
 BOARD_SYSTEMIMAGE_PARTITION_SIZE := 3221225472
 BOARD_SYSTEMIMAGE_JOURNAL_SIZE := 0
-# as of 3765811, inode usage was xxxx, use 4096 to be safe
 BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT := 4096
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 26503790080
 BOARD_CACHEIMAGE_PARTITION_SIZE := 104857600
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_FLASH_BLOCK_SIZE := 131072
-
-# +
-#BOARD_VENDORIMAGE_PARTITION_SIZE := 209715200
-#BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_VENDORIMAGE_PARTITION_SIZE := 209715200
+BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
+TARGET_COPY_OUT_VENDOR := vendor # write vendor modules to system->vendor
+TARGET_RELEASETOOLS_EXTENSIONS := device/huawei/angler
+TARGET_USES_MKE2FS := true
 
 TARGET_AUX_OS_VARIANT_LIST := angler
-
 TARGET_RECOVERY_FSTAB = device/huawei/angler/fstab.angler
-TARGET_COPY_OUT_VENDOR := vendor
-TARGET_RELEASETOOLS_EXTENSIONS := device/huawei/angler
 
-#BOARD_SEPOLICY_DIRS += \
-#	device/huawei/angler/sepolicy
 
+# SELinux
+BOARD_SEPOLICY_DIRS += \
+	device/huawei/angler/sepolicy	
 TARGET_USES_64_BIT_BINDER := true
-
 TARGET_USES_AOSP := true
-
 TARGET_USES_INTERACTION_BOOST := true
-
 TARGET_RECOVERY_UI_LIB := librecovery_ui_nanohub
 
+
+# Camera
 # Force camera module to be compiled only in 32-bit mode on 64-bit systems
 # Once camera module can run in the native mode of the system (either
 # 32-bit or 64-bit), the following line should be deleted
@@ -141,19 +159,36 @@ WIFI_DRIVER_FW_PATH_PARAM := "/sys/module/bcmdhd/parameters/firmware_path"
 WIFI_DRIVER_FW_PATH_STA := "/vendor/firmware/fw_bcmdhd.bin"
 WIFI_DRIVER_FW_PATH_AP := "/vendor/firmware/fw_bcmdhd_apsta.bin"
 
+
 #GPS
 BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := $(TARGET_BOARD_PLATFORM)
 BOARD_VENDOR_QCOM_LOC_PDK_FEATURE_SET := true
 
+
 #NFC
 NXP_CHIP_TYPE := 2
 
+
 # Testing related defines
 BOARD_PERFSETUP_SCRIPT := platform_testing/scripts/perf-setup/angler-setup.sh
-
 TARGET_FS_CONFIG_GEN += device/huawei/angler/config.fs
-
 DEVICE_MANIFEST_FILE := device/huawei/angler/manifest.xml
 DEVICE_MATRIX_FILE := device/huawei/angler/compatibility_matrix.xml
+
+# TWRP
+TW_THEME := portrait_hdpi
+RECOVERY_SDCARD_ON_DATA := true
+BOARD_HAS_NO_REAL_SDCARD := true
+TARGET_RECOVERY_QCOM_RTC_FIX := true
+TW_BRIGHTNESS_PATH := "/sys/class/backlight/panel0-backlight/brightness"
+TW_DEFAULT_BRIGHTNESS := 80
+TW_MAX_BRIGHTNESS := 1023
+TW_INCLUDE_NTFS_3G := true
+TW_EXCLUDE_SUPERSU := true
+TW_INCLUDE_CRYPTO := true
+TW_EXTRA_LANGUAGES := true
+TW_DEFAULT_LANGUAGE := zh_CN
+
+
 
 -include vendor/huawei/angler/BoardConfigVendor.mk
